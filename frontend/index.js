@@ -22,7 +22,7 @@ window.onload = async () => {
 // Button clicks
 document.querySelector('form').onsubmit = doUserAction;
 document.querySelector('#sign-in-button').onclick = () => { wallet.signIn(); };
-document.querySelector('#sign-out-button').onclick = () => { wallet.signOut(); }; 
+document.querySelector('#sign-out-button').onclick = () => { wallet.signOut(); };
 
 // Take the new greeting and send it to the contract
 async function doUserAction(event) {
@@ -38,6 +38,11 @@ async function doUserAction(event) {
   await fetchGreeting();
   document.querySelector('#signed-in-flow main')
     .classList.remove('please-wait');
+}
+
+async function createNewGame(firstChoice) {
+  console.log('create new game', firstChoice)
+  await contract.startGame(firstChoice);
 }
 
 // Get greeting from the contract on chain

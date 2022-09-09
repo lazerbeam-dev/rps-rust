@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="assets/favicon.ico"/>
-  <link rel="apple-touch-icon" href="assets/favicon.ico"/>
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/favicon.ico" />
   <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous"> -->
   <title>Welcome to NEAR</title>
   <link rel="stylesheet" href="assets/global.css">
 </head>
+
 <body>
   <main id="signed-out-flow" style="display: none">
     <h1>
@@ -41,7 +43,7 @@
       <h1>Rock Paper Scissors</h1>
       <h2>A timeless classic now also immutable</h2>
       <div style="align-self: center; align-content: center">
-        <button style="margin-left: 37%" @click="createGame()">Create game</button>
+        <button style="margin-left: 37%" @click="createNewGame">Create game</button>
       </div>
       <h3>Active games</h3>
       <p>{{ message }}</p>
@@ -52,11 +54,7 @@
       <form class="change">
         <label for="greeting">Change greeting:</label>
         <div>
-          <input
-                  autocomplete="off"
-                  id="greeting"
-                  data-behavior="greeting"
-          />
+          <input autocomplete="off" id="greeting" data-behavior="greeting" />
           <button>
             <span>Save</span>
             <div class="loader"></div>
@@ -94,7 +92,13 @@
 
   <script src="index.js" type="module"></script>
   <script src="https://unpkg.com/vue@3"></script>
-  <script>
+  <script type="module">
+    import { Contract } from './near-interface';
+    import { Wallet } from './near-wallet';
+
+    // create the Wallet and the Contract
+    const wallet = new Wallet({ contractId: process.env.CONTRACT_NAME });
+    const contract = new Contract({ wallet: wallet });
     const { createApp } = Vue
 
     createApp({
@@ -105,14 +109,15 @@
       },
       methods: {
         test() {
-          
+
         },
-        async createGame(option) {
-          console.log(window.contract)
-          console.log("yoyoy")
+        async createNewGame(firstChoice) {
+          console.log('create new game', firstChoice)
+          await contract.startGame(firstChoice);
         }
       }
     }).mount('#vue-app')
   </script>
 </body>
+
 </html>
