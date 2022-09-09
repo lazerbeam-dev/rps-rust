@@ -7,7 +7,8 @@
  */
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{log, near_bindgen};
+use near_sdk::{ env, log, near_bindgen};
+use near_sdk::collections::LookupMap;
 
 // Define the default message
 const DEFAULT_MESSAGE: &str = "Hello";
@@ -17,12 +18,15 @@ const DEFAULT_MESSAGE: &str = "Hello";
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
     message: String,
+    games: LookupMap<String, String>
 }
 
 // Define the default, which automatically initializes the contract
 impl Default for Contract{
     fn default() -> Self{
-        Self{message: DEFAULT_MESSAGE.to_string()}
+        Self{message: DEFAULT_MESSAGE.to_string(),
+            games: LookupMap::new(b"m")
+        }
     }
 }
 
@@ -39,6 +43,12 @@ impl Contract {
         // Use env::log to record logs permanently to the blockchain!
         log!("Saving greeting {}", message);
         self.message = message;
+    }
+
+    pub fn start_game(&mut self, choice: String) {
+        log!("Starting game with {}", choice);
+        let gamer_id = env::signer_account_id().to_string();
+        self.games.insert(&gamer_id, &choice);
     }
 }
 

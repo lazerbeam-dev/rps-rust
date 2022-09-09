@@ -12,4 +12,8 @@ export class Contract{
   async setGreeting(greeting){
     return await this.wallet.callMethod({method: 'set_greeting', args:{message: greeting}});
   }
+
+  async startGame(firstChoice){
+    return await this.wallet.callMethod({method: 'create_game', args:{choice: firstChoice}})
+  }
 }
