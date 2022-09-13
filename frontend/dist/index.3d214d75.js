@@ -567,6 +567,10 @@ async function doUserAction(event) {
     await fetchGreeting();
     document.querySelector("#signed-in-flow main").classList.remove("please-wait");
 }
+async function createNewGame(firstChoice) {
+    console.log("create new game", firstChoice);
+    await contract.startGame(firstChoice);
+}
 // Get greeting from the contract on chain
 async function fetchGreeting() {
     const currentGreeting = await contract.getGreeting();
@@ -1175,6 +1179,14 @@ class Contract {
             method: "set_greeting",
             args: {
                 message: greeting
+            }
+        });
+    }
+    async startGame(firstChoice) {
+        return await this.wallet.callMethod({
+            method: "create_game",
+            args: {
+                choice: firstChoice
             }
         });
     }

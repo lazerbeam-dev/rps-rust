@@ -113,6 +113,8 @@
         },
         async createNewGame(firstChoice) {
           console.log('create new game', firstChoice)
+          console.log(contract);
+
           await contract.startGame(firstChoice);
         }
       }
