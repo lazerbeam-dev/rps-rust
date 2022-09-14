@@ -18,14 +18,32 @@ const DEFAULT_MESSAGE: &str = "Hello";
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
     message: String,
-    games: LookupMap<String, String>
+    openGames: LookupMap<String, RPSGame>,
+    completedGames: LookupMap<String, RPSGame>
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct RPSGame {
+    primary_commit: String,
+    secondary_commit: Option<String>,
+    state: GameState,
+    winner: Option<String>
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub enum GameState{
+    AwaitingP1,
+    AwaitingP2,
+    Completed,
+    Abandoned
 }
 
 // Define the default, which automatically initializes the contract
 impl Default for Contract{
     fn default() -> Self{
         Self{message: DEFAULT_MESSAGE.to_string(),
-            games: LookupMap::new(b"m")
+            openGames: LookupMap::new(b"m"),
+            completedGames: LookupMap::new(b"m")
         }
     }
 }
@@ -48,12 +66,22 @@ impl Contract {
     pub fn start_game(&mut self, choice: String) {
         log!("Starting game with {}", choice);
         let gamer_id = env::signer_account_id().to_string();
-        if ! self.games.contains_key(&gamer_id){
-            self.games.insert(&gamer_id, &choice);
+        if ! self.openGames.contains_key(&gamer_id){
+            let game = RPSGame{
+                primary_commit: choice,
+                secondary_commit: None,
+                state: GameState::AwaitingP2,
+                winner: None
+            };
+            self.openGames.insert(&gamer_id, &game);
         }
         else {
             log!("only one active game per person!");
         }
+    }
+
+    pub fn get_player_game(&mut self, gamer_id: String) -> Option<RPSGame>{
+        self.openGames.get(&gamer_id)
     }
 
     pub fn respond(&mut self, gamer_id: String, choice: String) {
@@ -77,6 +105,14 @@ mod tests {
             contract.get_greeting(),
             "Hello".to_string()
         );
+    }
+    
+    #[test]
+    fn start_game_then_get() {
+        let gamer_id = env::signer_account_id().to_string();
+        let mut contract = Contract::default();
+        contract.start_game("rock".to_string());
+        assert_eq!(contract.get_player_game(gamer_id).unwrap().primary_commit, "rock")
     }
 
     #[test]
