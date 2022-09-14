@@ -48,7 +48,16 @@ impl Contract {
     pub fn start_game(&mut self, choice: String) {
         log!("Starting game with {}", choice);
         let gamer_id = env::signer_account_id().to_string();
-        self.games.insert(&gamer_id, &choice);
+        if ! self.games.contains_key(&gamer_id){
+            self.games.insert(&gamer_id, &choice);
+        }
+        else {
+            log!("only one active game per person!");
+        }
+    }
+
+    pub fn respond(&mut self, gamer_id: String, choice: String) {
+        let gamer2_id = env::signer_account_id().to_string();
     }
 }
 
