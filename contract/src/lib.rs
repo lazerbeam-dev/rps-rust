@@ -22,7 +22,7 @@ pub struct Contract {
     completedGames: LookupMap<String, RPSGame>
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub struct RPSGame {
     primary_commit: String,
     secondary_commit: Option<String>,
@@ -30,7 +30,7 @@ pub struct RPSGame {
     winner: Option<String>
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub enum GameState{
     AwaitingP1,
     AwaitingP2,
@@ -63,7 +63,7 @@ impl Contract {
         self.message = message;
     }
 
-    pub fn start_game(&mut self, choice: String) {
+    pub fn start_game(&mut self, choice: String) -> Option<RPSGame>{
         log!("Starting game with {}", choice);
         let gamer_id = env::signer_account_id().to_string();
         if ! self.openGames.contains_key(&gamer_id){
@@ -74,9 +74,11 @@ impl Contract {
                 winner: None
             };
             self.openGames.insert(&gamer_id, &game);
+            Some(game)
         }
         else {
             log!("only one active game per person!");
+            None
         }
     }
 
@@ -112,6 +114,16 @@ mod tests {
         let gamer_id = env::signer_account_id().to_string();
         let mut contract = Contract::default();
         contract.start_game("rock".to_string());
+        assert_eq!(contract.get_player_game(gamer_id).unwrap().primary_commit, "rock")
+    }
+
+    #[test]
+    fn cant_start_two_games(){
+        let gamer_id = env::signer_account_id().to_string();
+        let mut contract = Contract::default();
+        contract.start_game("rock".to_string());
+        let second_attempt = contract.start_game("scissors".to_string());
+        assert_eq!(second_attempt.is_none(), true);
         assert_eq!(contract.get_player_game(gamer_id).unwrap().primary_commit, "rock")
     }
 
