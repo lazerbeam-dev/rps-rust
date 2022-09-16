@@ -34,8 +34,13 @@ pub struct RPSGame {
 pub enum GameState{
     AwaitingP1,
     AwaitingP2,
-    Completed,
+    Completed(GameOutcome),
     Abandoned
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
+pub enum GameOutcome{
+    P1Win, P2Win, Draw
 }
 
 // Define the default, which automatically initializes the contract
@@ -89,6 +94,50 @@ impl Contract {
     pub fn respond(&mut self, gamer_id: String, choice: String) {
         let gamer2_id = env::signer_account_id().to_string();
     }
+
+    pub fn resolve_game(self, option1: i8, option2: i8) -> GameOutcome{
+        // if same, draw
+        if option1 == option2 {
+            Draw
+        }
+        // if numbers are consecutive, highest wins
+        else if (option1 - option2).abs() == 1 {
+            if option1 > option2 { GameOutcome::P1Win } else { GameOutcome::P2Win }
+        }
+        // if numbers are not consecutive, lowest wins (basically just paper beating rock)
+        else {
+            if option1 < option2 { GameOutcome::P1Win } else { GameOutcome::P2Win }
+        }
+    }
+
+    pub fn choice_to_number(choice: String) -> Option<i8> {
+        if choice == "rock" {
+            Some(3)
+        }
+        else if choice == "scissors" {
+            Some(2)
+        }
+        else if choice == "paper"{
+            Some(1)
+        }
+        else {
+            None
+        }
+    }
+
+    pub fn resolve(&mut self, gamer_id: String) -> Option<GameOutcome>{
+        let game = self.openGames.get(&gamer_id);
+        match game {
+            Some(game) => {
+                let p2Choice = choice_to_number(game.secondary_commit);
+                let p1Choice = choice_to_number(game.primary_commit);
+                Some(resolve_game(p1Choice, p2Choice))
+            }
+            None => {
+                None
+            }
+        }
+    }
 }
 
 /*
@@ -98,6 +147,7 @@ impl Contract {
 #[cfg(test)]
 mod tests {
     use super::*;
+    //use crate::GameOutcome::P2Win;
 
     #[test]
     fn get_default_greeting() {
@@ -107,6 +157,14 @@ mod tests {
             contract.get_greeting(),
             "Hello".to_string()
         );
+    }
+
+    #[test]
+    fn test_outcomes() {
+        let contract = Contract::default();
+        let p1 = "rock";
+        let p2 = "paper";
+        assert_eq!(contract::resolve_game(contract::choice_to_number(p1), contract::choice_to_number(p2)), P2Win);
     }
     
     #[test]
