@@ -163,11 +163,16 @@ mod tests {
     #[test]
     fn test_outcomes() {
         let contract = Contract::default();
-        let p1 = "rock".to_string();
-        let p2 = "paper".to_string();
-        let num1 = Contract::choice_to_number(&p1).unwrap();
-        let num2 = Contract::choice_to_number(&p2).unwrap();
-        assert_eq!(Contract::resolve_game(&num1, &num2), P2Win);
+        let rock = "rock".to_string();
+        let paper = "paper".to_string();
+        let scissors = "scissors".to_string();
+        let rockNum = Contract::choice_to_number(&rock).unwrap();
+        let scissorsNum = Contract::choice_to_number(&scissors).unwrap();
+        let paperNum = Contract::choice_to_number(&paper).unwrap();
+        assert_eq!(Contract::resolve_game(&rockNum, &paperNum), P2Win);
+        assert_eq!(Contract::resolve_game(&rockNum, &scissorsNum), P1Win);
+        assert_eq!(Contract::resolve_game(&scissorsNum, &paperNum), P1Win);
+        assert_eq!(Contract::resolve_game(&paperNum, &paperNum), Draw);
     }
     
     #[test]
