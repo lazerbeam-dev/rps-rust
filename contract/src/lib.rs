@@ -18,8 +18,8 @@ const DEFAULT_MESSAGE: &str = "Hello";
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
     message: String,
-    openGames: LookupMap<String, RPSGame>,
-    completedGames: LookupMap<String, RPSGame>
+    active_games: LookupMap<String, RPSGame>,
+    completed_games: LookupMap<String, RPSGame>
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
@@ -47,8 +47,8 @@ pub enum GameOutcome{
 impl Default for Contract{
     fn default() -> Self{
         Self{message: DEFAULT_MESSAGE.to_string(),
-            openGames: LookupMap::new(b"m"),
-            completedGames: LookupMap::new(b"m")
+            active_games: LookupMap::new(b"m"),
+            completed_games: LookupMap::new(b"m")
         }
     }
 }
@@ -71,14 +71,14 @@ impl Contract {
     pub fn start_game(&mut self, choice: String) -> Option<RPSGame>{
         log!("Starting game with {}", choice);
         let gamer_id = env::signer_account_id().to_string();
-        if ! self.openGames.contains_key(&gamer_id){
+        if ! self.active_games.contains_key(&gamer_id){
             let game = RPSGame{
                 primary_commit: choice,
                 secondary_commit: None,
                 state: GameState::AwaitingP2,
                 winner: None
             };
-            self.openGames.insert(&gamer_id, &game);
+            self.active_games.insert(&gamer_id, &game);
             Some(game)
         }
         else {
@@ -88,11 +88,22 @@ impl Contract {
     }
 
     pub fn get_player_game(&mut self, gamer_id: String) -> Option<RPSGame>{
-        self.openGames.get(&gamer_id)
+        self.active_games.get(&gamer_id)
     }
 
-    pub fn respond(&mut self, gamer_id: String, choice: String) {
+    pub fn respond(&mut self, gamer_id: &String, choice: String) {
         let gamer2_id = env::signer_account_id().to_string();
+        let game = self.active_games.get(&gamer_id);
+        match game {
+            Some(mut g) => {
+                g.secondary_commit = Some(choice);
+                self.active_games.remove(&gamer_id);
+                self.active_games.insert(&gamer_id, &g);
+            }
+            None => {
+                log!("couldn't find that game");
+            }
+        }
     }
 
     pub fn resolve_game(option1: &i8, option2: &i8) -> GameOutcome{
@@ -126,12 +137,12 @@ impl Contract {
     }
 
     pub fn resolve(&mut self, gamer_id: String) -> Option<GameOutcome>{
-        let game = self.openGames.get(&gamer_id);
+        let game = self.active_games.get(&gamer_id);
         match game {
             Some(game) => {
-                let p2Choice = Contract::choice_to_number(&game.secondary_commit.unwrap()).unwrap();
-                let p1Choice = Contract::choice_to_number(&game.primary_commit).unwrap();
-                Some(Contract::resolve_game(&p1Choice, &p2Choice))
+                let p2_choice = Contract::choice_to_number(&game.secondary_commit.unwrap()).unwrap();
+                let p1_choice = Contract::choice_to_number(&game.primary_commit).unwrap();
+                Some(Contract::resolve_game(&p1_choice, &p2_choice))
             }
             None => {
                 None
@@ -162,17 +173,16 @@ mod tests {
 
     #[test]
     fn test_outcomes() {
-        let contract = Contract::default();
         let rock = "rock".to_string();
         let paper = "paper".to_string();
         let scissors = "scissors".to_string();
-        let rockNum = Contract::choice_to_number(&rock).unwrap();
-        let scissorsNum = Contract::choice_to_number(&scissors).unwrap();
-        let paperNum = Contract::choice_to_number(&paper).unwrap();
-        assert_eq!(Contract::resolve_game(&rockNum, &paperNum), P2Win);
-        assert_eq!(Contract::resolve_game(&rockNum, &scissorsNum), P1Win);
-        assert_eq!(Contract::resolve_game(&scissorsNum, &paperNum), P1Win);
-        assert_eq!(Contract::resolve_game(&paperNum, &paperNum), Draw);
+        let rock_num = Contract::choice_to_number(&rock).unwrap();
+        let scissors_num = Contract::choice_to_number(&scissors).unwrap();
+        let paper_num = Contract::choice_to_number(&paper).unwrap();
+        assert_eq!(Contract::resolve_game(&rock_num, &paper_num), P2Win);
+        assert_eq!(Contract::resolve_game(&rock_num, &scissors_num), P1Win);
+        assert_eq!(Contract::resolve_game(&scissors_num, &paper_num), P1Win);
+        assert_eq!(Contract::resolve_game(&paper_num, &paper_num), Draw);
     }
     
     #[test]
@@ -181,6 +191,16 @@ mod tests {
         let mut contract = Contract::default();
         contract.start_game("rock".to_string());
         assert_eq!(contract.get_player_game(gamer_id).unwrap().primary_commit, "rock")
+    }
+
+    #[test]
+    fn start_respond_get() {
+        let gamer_id = env::signer_account_id().to_string();
+        let mut contract = Contract::default();
+        contract.start_game("rock".to_string());
+        contract.respond(&gamer_id, "paper".to_string());
+        let game = contract.get_player_game(gamer_id).unwrap();
+        assert_eq!(game.secondary_commit.unwrap(), "paper");
     }
 
     #[test]

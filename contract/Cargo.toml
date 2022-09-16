@@ -1,6 +1,6 @@
 [package]
-name = "hello_near"
-version = "1.0.0"
+name = "rockpaperscissors"
+version = "0.0.8"
 authors = ["Near Inc <hello@near.org>"]
 edition = "2021"
 
