@@ -38,7 +38,7 @@ pub enum GameState{
     Abandoned
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, Debug, PartialEq)]
 pub enum GameOutcome{
     P1Win, P2Win, Draw
 }
@@ -95,10 +95,10 @@ impl Contract {
         let gamer2_id = env::signer_account_id().to_string();
     }
 
-    pub fn resolve_game(self, option1: i8, option2: i8) -> GameOutcome{
+    pub fn resolve_game(option1: &i8, option2: &i8) -> GameOutcome{
         // if same, draw
         if option1 == option2 {
-            Draw
+            GameOutcome::Draw
         }
         // if numbers are consecutive, highest wins
         else if (option1 - option2).abs() == 1 {
@@ -110,7 +110,7 @@ impl Contract {
         }
     }
 
-    pub fn choice_to_number(choice: String) -> Option<i8> {
+    pub fn choice_to_number(choice: &String) -> Option<i8> {
         if choice == "rock" {
             Some(3)
         }
@@ -129,9 +129,9 @@ impl Contract {
         let game = self.openGames.get(&gamer_id);
         match game {
             Some(game) => {
-                let p2Choice = choice_to_number(game.secondary_commit);
-                let p1Choice = choice_to_number(game.primary_commit);
-                Some(resolve_game(p1Choice, p2Choice))
+                let p2Choice = Contract::choice_to_number(&game.secondary_commit.unwrap()).unwrap();
+                let p1Choice = Contract::choice_to_number(&game.primary_commit).unwrap();
+                Some(Contract::resolve_game(&p1Choice, &p2Choice))
             }
             None => {
                 None
@@ -147,7 +147,8 @@ impl Contract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    //use crate::GameOutcome::P2Win;
+    use crate::GameOutcome::{Draw, P1Win, P2Win};
+
 
     #[test]
     fn get_default_greeting() {
@@ -162,9 +163,11 @@ mod tests {
     #[test]
     fn test_outcomes() {
         let contract = Contract::default();
-        let p1 = "rock";
-        let p2 = "paper";
-        assert_eq!(contract::resolve_game(contract::choice_to_number(p1), contract::choice_to_number(p2)), P2Win);
+        let p1 = "rock".to_string();
+        let p2 = "paper".to_string();
+        let num1 = Contract::choice_to_number(&p1).unwrap();
+        let num2 = Contract::choice_to_number(&p2).unwrap();
+        assert_eq!(Contract::resolve_game(&num1, &num2), P2Win);
     }
     
     #[test]
