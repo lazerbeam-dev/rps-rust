@@ -26,6 +26,8 @@ pub struct Contract {
 pub struct RPSGame {
     primary_commit: String,
     secondary_commit: Option<String>,
+    real_p1: Option<i8>,
+    real_p2: Option<i8>,
     state: GameState,
     winner: Option<String>
 }
@@ -54,20 +56,14 @@ impl Default for Contract{
 }
 
 // Implement the contract structure
+
+// commit phase (players put hashed answer on blockchain)
+// reveal phase (players give plantext answer and password, their commitments are revealed)
+// resolve phase (game pays out whoever won)
+
+
 #[near_bindgen]
 impl Contract {
-    // Public method - returns the greeting saved, defaulting to DEFAULT_MESSAGE
-    pub fn get_greeting(&self) -> String {
-        return self.message.clone();
-    }
-
-    // Public method - accepts a greeting, such as "howdy", and records it
-    pub fn set_greeting(&mut self, message: String) {
-        // Use env::log to record logs permanently to the blockchain!
-        log!("Saving greeting {}", message);
-        self.message = message;
-    }
-
     pub fn start_game(&mut self, choice: String) -> Option<RPSGame>{
         log!("Starting game with {}", choice);
         let gamer_id = env::signer_account_id().to_string();
@@ -75,6 +71,8 @@ impl Contract {
             let game = RPSGame{
                 primary_commit: choice,
                 secondary_commit: None,
+                real_p1: None,
+                real_p2: None,
                 state: GameState::AwaitingP2,
                 winner: None
             };
@@ -89,6 +87,10 @@ impl Contract {
 
     pub fn get_player_game(&mut self, gamer_id: String) -> Option<RPSGame>{
         self.active_games.get(&gamer_id)
+    }
+
+    pub fn encryptOption(option: &String, password: &String) -> String {
+        "TODO: ENcrpytion".to_string()
     }
 
     pub fn respond(&mut self, gamer_id: &String, choice: String) {
@@ -160,17 +162,6 @@ mod tests {
     use super::*;
     use crate::GameOutcome::{Draw, P1Win, P2Win};
 
-
-    #[test]
-    fn get_default_greeting() {
-        let contract = Contract::default();
-        // this test did not call set_greeting so should return the default "Hello" greeting
-        assert_eq!(
-            contract.get_greeting(),
-            "Hello".to_string()
-        );
-    }
-
     #[test]
     fn test_outcomes() {
         let rock = "rock".to_string();
@@ -211,15 +202,5 @@ mod tests {
         let second_attempt = contract.start_game("scissors".to_string());
         assert_eq!(second_attempt.is_none(), true);
         assert_eq!(contract.get_player_game(gamer_id).unwrap().primary_commit, "rock")
-    }
-
-    #[test]
-    fn set_then_get_greeting() {
-        let mut contract = Contract::default();
-        contract.set_greeting("howdy".to_string());
-        assert_eq!(
-            contract.get_greeting(),
-            "howdy".to_string()
-        );
     }
 }
