@@ -89,7 +89,7 @@ impl Contract {
         self.active_games.get(&gamer_id)
     }
 
-    pub fn encryptOption(option: &String, password: &String) -> String {
+    pub fn encrypt_option(option: &String, password: &String) -> String {
         "TODO: ENcrpytion".to_string()
     }
 
