@@ -10,6 +10,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{ env, log, near_bindgen};
 use near_sdk::collections::LookupMap;
 
+
 // Define the default message
 const DEFAULT_MESSAGE: &str = "Hello";
 
