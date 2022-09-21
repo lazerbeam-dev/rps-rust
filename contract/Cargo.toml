@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 near-sdk = "4.0.0"
 uint = { version = "0.9.3", default-features = false }
-ecdsa = "0.14.7"
+p256 = {version = "0.10.1", default-features = false, features = ["ecdsa", "pkcs8"]}
 
 [profile.release]
 codegen-units = 1

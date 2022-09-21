@@ -9,7 +9,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{ env, log, near_bindgen};
 use near_sdk::collections::LookupMap;
-
+use p256::ecdsa::SigningKey;
 
 // Define the default message
 const DEFAULT_MESSAGE: &str = "Hello";
@@ -87,6 +87,8 @@ impl Contract {
     }
 
     pub fn get_player_game(&mut self, gamer_id: String) -> Option<RPSGame>{
+        let has = SigningKey::random();
+
         self.active_games.get(&gamer_id)
     }
 
